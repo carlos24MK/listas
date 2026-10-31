@@ -1,0 +1,15 @@
+# Dependencias y archivos locales
+/vendor/
+/node_modules/
+/.env
+/.openai/
+/.idea/
+/.vscode/
+
+# Temporales y datos de sesión
+/tmp/
+/sessions/
+sess_*
+*.log
+.DS_Store
+Thumbs.db
