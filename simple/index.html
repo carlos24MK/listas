@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Programa de listas enlazadas con inserción por posición, búsqueda, edición y eliminación de personas.">
+    <title>Listas enlazadas · Estructuras II</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230f766e'/%3E%3Cpath d='M9 15h9v10H9zm13 0h9v10h-9zM18 20h4' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="estilos.css">
+    <script src="lista.js" defer></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <a class="skip-link" href="#programa">Saltar al programa</a>
+    <header class="header">
+        <a class="brand" href="#programa" aria-label="Listas enlazadas, inicio">
+            <span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><rect x="3" y="10" width="10" height="12" rx="2"/><rect x="19" y="10" width="10" height="12" rx="2"/><path d="M13 16h6"/></svg></span>
+            <span>Listas enlazadas<small>ESTRUCTURAS DE INFORMACIÓN II</small></span>
+        </a>
+        <a class="header-link" href="#logica">Ver la lógica <span aria-hidden="true">↗</span></a>
+    </header>
+
+    <main id="programa" class="main">
+        <nav aria-label="Tipo de lista"><a href="index.html">Lista doble</a> · <strong>Lista simple</strong></nav>
+        <div class="intro">
+            <div><span class="eyebrow">PRÁCTICA INTERACTIVA</span><h1>Personas, nodo a nodo.</h1><p>Agrega en cualquier posición y observa cómo cambian los enlaces.</p></div>
+            <span class="type-badge"><span aria-hidden="true">↔</span> Lista simple · enlace siguiente</span>
+        </div>
+
+        <section class="stats" aria-label="Estado de la lista">
+            <div class="stat"><span>Total de nodos</span><strong id="cantidad">0</strong><small>Elementos conectados</small></div>
+            <div class="stat"><span>Cabeza</span><strong id="cabeza">null</strong><small>Primer nodo de la lista</small></div>
+            <div class="stat"><span>Cola</span><strong id="cola">null</strong><small>Último nodo de la lista</small></div>
+        </section>
+
+        <div id="mensaje" class="message" role="status" aria-live="polite"></div>
+
+        <div class="workspace">
+            <div class="list-column">
+                <section class="panel" aria-labelledby="titulo-lista">
+                    <div class="panel-heading"><div><h2 id="titulo-lista">Tu lista</h2><p>Selecciona un nodo para consultar sus datos.</p></div><span class="live-label"><i></i> En memoria</span></div>
+                    <form id="form-buscar" class="search-bar">
+                        <label for="buscar-id" class="sr-only">Buscar por identificación</label>
+                        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg>
+                        <input id="buscar-id" placeholder="Buscar por identificación" inputmode="numeric" maxlength="20" required autocomplete="off">
+                        <button class="button small" type="submit">Buscar</button>
+                    </form>
+                    <div class="canvas" tabindex="0" aria-label="Diagrama de nodos. Desplázate horizontalmente para ver toda la lista.">
+                        <div id="cadena" class="chain"></div>
+                        <div id="vacio" class="empty-state" hidden><span class="empty-symbol" aria-hidden="true">∅</span><h3>La lista está vacía</h3><p>El primer nodo será cabeza y cola al mismo tiempo.</p><button id="primer-nodo" class="button secondary" type="button">Agregar primer nodo</button></div>
+                    </div>
+                    <div class="canvas-footer"><span><span class="legend-dot"></span> Nodo seleccionado <span class="legend-arrow" aria-hidden="true">→</span> Conexión hacia el siguiente</span><div><button id="ejemplo" class="text-button" type="button">Cargar ejemplo</button><button id="vaciar" class="text-button muted" type="button">Vaciar lista</button></div></div>
+                </section>
+
+                <section class="panel selection-panel" aria-labelledby="titulo-seleccion">
+                    <div class="panel-heading"><div><span class="eyebrow">NODO SELECCIONADO</span><h2 id="titulo-seleccion">Elige un nodo de la lista</h2></div><div class="action-buttons"><button id="editar" class="button secondary small" type="button" disabled>Editar</button><button id="eliminar" class="button danger-outline small" type="button" disabled>Eliminar</button></div></div>
+                    <div id="detalle-vacio" class="selection-empty">Aquí podrás ver sus datos y sus conexiones.</div>
+                    <div id="detalle" hidden>
+                        <dl class="person-details"><div><dt>Identificación</dt><dd id="detalle-id"></dd></div><div><dt>Correo</dt><dd id="detalle-correo"></dd></div><div><dt>Fecha</dt><dd id="detalle-fecha"></dd></div></dl>
+                        <div class="connections"><div><span>Sin enlace anterior</span><strong id="detalle-antes"></strong></div><span aria-hidden="true">←</span><div class="connection-current"><span>actual</span><strong id="detalle-actual"></strong></div><span aria-hidden="true">→</span><div><span>siguiente</span><strong id="detalle-siguiente"></strong></div></div>
+                    </div>
+                </section>
+
+                <section class="operation" aria-labelledby="titulo-operacion"><span class="operation-icon" aria-hidden="true">⌘</span><div><h2 id="titulo-operacion">Lo que ocurrió</h2><p id="operacion-texto">La lista está lista para comenzar.</p><ol id="pasos"></ol></div></section>
+            </div>
+
+            <aside class="panel form-panel" aria-labelledby="titulo-formulario">
+                <div class="panel-heading"><div><span id="modo-formulario" class="eyebrow">NUEVO REGISTRO</span><h2 id="titulo-formulario">Agregar nodo</h2></div><span class="form-icon" aria-hidden="true">+</span></div>
+                <form id="form-persona">
+                    <div class="field"><label for="identificacion">Identificación <span>*</span></label><input id="identificacion" inputmode="numeric" pattern="[0-9]{1,20}" maxlength="20" placeholder="Ej. 104" required autocomplete="off"><small id="id-ayuda">Debe ser única dentro de la lista.</small></div>
+                    <div class="field"><label for="nombres">Nombres <span>*</span></label><input id="nombres" maxlength="60" placeholder="Ej. Sofía" required autocomplete="off"></div>
+                    <div class="field"><label for="apellidos">Apellidos <span>*</span></label><input id="apellidos" maxlength="60" placeholder="Ej. Ramírez" required autocomplete="off"></div>
+                    <div class="field"><label for="fecha">Fecha <span>*</span></label><input id="fecha" type="date" min="0001-01-01" max="9999-12-31" required></div>
+                    <div class="field"><label for="correo">Correo <span>*</span></label><input id="correo" type="email" maxlength="254" placeholder="sofia@ejemplo.com" required autocomplete="off"></div>
+                    <fieldset id="ubicacion" class="location"><legend>¿Dónde lo agregamos?</legend><label for="modo-posicion" class="sr-only">Tipo de inserción</label><select id="modo-posicion"><option value="final">Al final de la lista</option><option value="inicio">Al inicio de la lista</option><option value="posicion">En una posición específica</option></select><div id="posicion-grupo" class="field" hidden><label for="posicion">Posición</label><input id="posicion" type="number" min="1" step="1" value="1" required></div><p id="rango-posicion"></p></fieldset>
+                    <button id="guardar" type="submit" class="button primary full">Agregar nodo <span aria-hidden="true">+</span></button>
+                    <button id="cancelar-edicion" type="button" class="button secondary full" hidden>Cancelar edición</button>
+                    <p class="form-note" id="nota-formulario">Primero se conectan los vecinos. Después se actualiza cabeza o cola.</p>
+                </form>
+            </aside>
+        </div>
+
+        <section class="panel table-panel" aria-labelledby="titulo-tabla"><div class="panel-heading"><div><h2 id="titulo-tabla">Recorrido de la lista</h2><p>Los registros aparecen siguiendo el enlace siguiente desde la cabeza.</p></div><span id="tabla-total" class="count-badge">0 registros</span></div><div class="table-scroll"><table><thead><tr><th scope="col">Posición</th><th scope="col">Identificación</th><th scope="col">Persona</th><th scope="col">Correo</th><th scope="col">Anterior (sin enlace)</th><th scope="col">Siguiente</th><th scope="col"><span class="sr-only">Acción</span></th></tr></thead><tbody id="tabla-cuerpo"></tbody></table></div></section>
+
+        <section id="logica" class="logic-section"><div><span class="eyebrow">PARA ENTENDER EL CÓDIGO</span><h2>Conecta primero. Actualiza después.</h2><p>Cada nodo contiene una persona y un enlace <code>siguiente</code>. Esta es una lista simplemente enlazada.</p><p>Los registros se organizan con nodos conectados. El recorrido utiliza una variable auxiliar desde la cabeza.</p></div><details class="panel code-details"><summary>Ver los métodos del programa <span aria-hidden="true">+</span></summary><div class="code-grid"><div><h3>Crear un nodo</h3><pre id="codigo-nodo"></pre></div><div><h3>Agregar por posición</h3><pre id="codigo-agregar"></pre></div><div><h3>Eliminar y reconectar</h3><pre id="codigo-eliminar"></pre></div></div></details></section>
+        <footer class="footer"><span>HTML · CSS · JavaScript</span><span id="estado-almacenamiento">Los datos se guardan en este navegador.</span></footer>
+    </main>
+
+    <dialog id="confirmacion" aria-labelledby="confirmacion-titulo" aria-describedby="confirmacion-texto"><form method="dialog"><span class="dialog-symbol" aria-hidden="true">!</span><h2 id="confirmacion-titulo"></h2><p id="confirmacion-texto"></p><div class="dialog-actions"><button id="confirmacion-cancelar" class="button secondary" value="cancelar">Cancelar</button><button id="confirmacion-aceptar" class="button danger" value="aceptar">Eliminar nodo</button></div></form></dialog>
+</body>
+</html>
