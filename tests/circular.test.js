@@ -58,3 +58,24 @@ test('las versiones lineales siguen terminando en null',()=>{
  const P=require('../simple/lista.js').Persona;simple.agregar(new P('1','Ana','Torres','2005-04-12','ana@ejemplo.com'));
  assert.equal(simple.cola.siguiente,null);assert.ok(!('antes' in simple.cabeza));
 });
+
+test('guardar y recuperar el círculo sin perder el cierre ni aceptar ciclos incompletos',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const root=path.join(__dirname,'..');
+ let saved='';
+ const sandbox=vm.createContext({document:{getElementById:()=>({textContent:''})},localStorage:{setItem:(_key,text)=>{saved=text;}}});
+ vm.runInContext(fs.readFileSync(path.join(root,'lista.js'),'utf8'),sandbox);
+ vm.runInContext(fs.readFileSync(path.join(root,'circular/lista.js'),'utf8'),sandbox);
+ const app=fs.readFileSync(path.join(root,'circular/app.js'),'utf8').split('$("form-persona").addEventListener("submit"')[0];
+ vm.runInContext(app,sandbox);
+ vm.runInContext('cargarEjemplo(); guardarLocal(); lista.vaciar();',sandbox);
+ sandbox.snapshot=saved;
+ vm.runInContext('recuperarLocal(snapshot);',sandbox);
+ assert.equal(vm.runInContext('lista.cantidad',sandbox),3);
+ assert.equal(vm.runInContext('lista.cola.siguiente === lista.cabeza && lista.cabeza.antes === lista.cola',sandbox),true);
+ const invalid=JSON.parse(saved);invalid.nodos['303'].siguiente='202';sandbox.snapshot=JSON.stringify(invalid);
+ assert.throws(()=>vm.runInContext('recuperarLocal(snapshot)',sandbox));
+ assert.equal(vm.runInContext('lista.cantidad',sandbox),3);
+ vm.runInContext('lista.vaciar(); guardarLocal();',sandbox);sandbox.snapshot=saved;
+ vm.runInContext('recuperarLocal(snapshot)',sandbox);assert.equal(vm.runInContext('lista.cabeza',sandbox),null);
+});
