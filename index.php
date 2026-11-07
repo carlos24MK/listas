@@ -54,7 +54,7 @@ function ocultos($accion, $tipo, $token)
     echo '<input type="hidden" name="token" value="' . e($token) . '">';
 }
 
-// Se mantienen dos listas independientes: la original y su variante doble.
+// Tres listas independientes: simple, doble y doble circular.
 if (!isset($_SESSION['lista_simple'])) {
     $_SESSION['lista_simple'] = new ListaSimple();
     cargarEjemplo($_SESSION['lista_simple']);
@@ -63,13 +63,18 @@ if (!isset($_SESSION['lista_doble'])) {
     $_SESSION['lista_doble'] = new ListaDoble();
     cargarEjemplo($_SESSION['lista_doble']);
 }
+if (!isset($_SESSION['lista_circular'])) {
+    $_SESSION['lista_circular'] = new ListaDobleCircular();
+    cargarEjemplo($_SESSION['lista_circular']);
+}
 if (!isset($_SESSION['token'])) {
     $_SESSION['token'] = bin2hex(random_bytes(32));
 }
 
 $tipoPedido = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['tipo'] ?? 'simple') : ($_GET['tipo'] ?? 'simple');
-$tipo = $tipoPedido === 'doble' ? 'doble' : 'simple';
-$esDoble = $tipo === 'doble';
+$tipo = in_array($tipoPedido, ['simple', 'doble', 'circular'], true) ? $tipoPedido : 'simple';
+$esCircular = $tipo === 'circular';
+$esDoble = $tipo !== 'simple';
 $lista = $_SESSION['lista_' . $tipo];
 $token = $_SESSION['token'];
 
@@ -136,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pasos[] = 'Se actualizaron los extremos y se desconectó el nodo retirado.';
         } elseif ($accion === 'vaciar') {
             $lista->vaciar();
-            $texto = 'Lista ' . $tipo . ' vacía. La otra versión se conserva.';
+            $texto = 'Lista ' . $tipo . ' vacía. Las otras versiones se conservan.';
             $pasos = ['cabeza = null.', 'cola = null.', 'cantidad = 0.'];
         } elseif ($accion === 'ejemplo') {
             cargarEjemplo($lista);
@@ -175,7 +180,7 @@ if ($busqueda !== '') {
     $aviso = [
         'texto' => $encontrado ? 'Encontrado: ' . nombre($encontrado) . ' (ID ' . $busqueda . ').' : 'No se encontró la identificación ' . $busqueda . '.',
         'error' => $encontrado === null,
-        'pasos' => ['actual comienza en cabeza.', 'Se compara cada identificación y se avanza con actual = actual->siguiente.', 'La búsqueda termina al encontrar el nodo o llegar a null.']
+        'pasos' => ['actual comienza en cabeza.', 'Se compara cada identificación y se avanza con actual = actual->siguiente.', 'La búsqueda termina al encontrar el nodo, llegar a null en las listas lineales o completar una vuelta en la circular.']
     ];
 }
 $seleccionado = $lista->buscar($idSeleccionado);
@@ -187,7 +192,7 @@ $valor = function ($campo, $predeterminado = '') use ($datosForm) {
     return isset($datosForm[$campo]) && is_string($datosForm[$campo]) ? $datosForm[$campo] : $predeterminado;
 };
 $modo = $valor('modo', 'final');
-$archivoLista = __DIR__ . '/src/' . ($esDoble ? 'ListaDoble.php' : 'ListaSimple.php');
+$archivoLista = __DIR__ . '/src/' . ($esCircular ? 'ListaDobleCircular.php' : ($esDoble ? 'ListaDoble.php' : 'ListaSimple.php'));
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -204,8 +209,8 @@ $archivoLista = __DIR__ . '/src/' . ($esDoble ? 'ListaDoble.php' : 'ListaSimple.
 <a class="skip-link" href="#programa">Saltar al programa</a>
 <header class="header"><a class="brand" href="index.php"><span class="brand-icon" aria-hidden="true">↔</span><span>Listas enlazadas en PHP<small>ESTRUCTURAS DE INFORMACIÓN II</small></span></a><a class="header-link" href="#logica">Ver el código ↗</a></header>
 <main class="main" id="programa">
-    <div class="intro"><div><span class="eyebrow">PRÁCTICA DEL PROFESOR JIMMY</span><h1>Lista simple y su variante doble.</h1><p>Conserva la primera versión y compara cómo cambian las conexiones.</p></div><span class="type-badge"><?= $esDoble ? '2 enlaces por nodo' : '1 enlace por nodo' ?></span></div>
-    <nav class="version-tabs" aria-label="Versión del programa"><a href="index.php?tipo=simple" <?= !$esDoble ? 'aria-current="page"' : '' ?>>Lista simple <span>dato + siguiente</span></a><a href="index.php?tipo=doble" <?= $esDoble ? 'aria-current="page"' : '' ?>>Lista doble <span>dato + antes + siguiente</span></a></nav>
+    <div class="intro"><div><span class="eyebrow">PRÁCTICA DEL PROFESOR JIMMY</span><h1>Listas simple, doble y doble circular.</h1><p>Compara los enlaces y observa cómo la circular une el último nodo con el primero.</p></div><span class="type-badge"><?= $esDoble ? '2 enlaces por nodo' : '1 enlace por nodo' ?></span></div>
+    <nav class="version-tabs" aria-label="Versión del programa"><a href="index.php?tipo=simple" <?= !$esDoble ? 'aria-current="page"' : '' ?>>Lista simple <span>dato + siguiente</span></a><a href="index.php?tipo=doble" <?= $tipo === 'doble' ? 'aria-current="page"' : '' ?>>Lista doble <span>dato + antes + siguiente</span></a><a href="index.php?tipo=circular" <?= $esCircular ? 'aria-current="page"' : '' ?>>Doble circular <span>cola y cabeza conectadas</span></a></nav>
     <section class="stats" aria-label="Estado de la lista"><div class="stat"><span>Total de nodos</span><strong id="cantidad"><?= $lista->cantidad ?></strong><small>Versión <?= e($tipo) ?></small></div><div class="stat"><span>Cabeza</span><strong id="cabeza"><?= e(referencia($lista->cabeza)) ?></strong><small>Primer nodo de la lista</small></div><div class="stat"><span>Cola</span><strong id="cola"><?= e(referencia($lista->cola)) ?></strong><small>Último nodo de la lista</small></div></section>
     <div class="message <?= $aviso['error'] ? 'error' : '' ?>" id="mensaje" role="status"><?= e($aviso['texto']) ?></div>
     <div class="workspace"><div class="list-column">
@@ -215,7 +220,7 @@ $archivoLista = __DIR__ . '/src/' . ($esDoble ? 'ListaDoble.php' : 'ListaSimple.
                 <?php if ($lista->cantidad === 0): ?>
                     <div class="empty-state"><span class="empty-symbol" aria-hidden="true">∅</span><h3>La lista está vacía</h3><p>El primer nodo será cabeza y cola al mismo tiempo.</p><a href="#formulario" class="button secondary">Agregar primer nodo</a></div>
                 <?php else: ?>
-                    <div id="cadena" class="chain"><?php if ($esDoble): ?><span class="null-cap" aria-hidden="true">null</span><?php endif; ?>
+                    <div id="cadena" class="chain"><?php if ($esDoble): ?><span class="null-cap" aria-hidden="true"><?= $esCircular ? e(referencia($lista->cola)) : 'null' ?></span><?php endif; ?>
                         <?php foreach ($lista->recorrer() as $posicion => $nodo): ?>
                             <?php if ($posicion > 1): ?><span class="connector" aria-hidden="true"><svg viewBox="0 0 44 44"><path d="M4 16h34m-5-5 5 5-5 5"/><?php if ($esDoble): ?><path d="M40 29H6m5-5-5 5 5 5"/><?php endif; ?></svg></span><?php endif; ?>
                             <a class="node <?= $seleccionado === $nodo ? 'selected' : '' ?>" id="nodo-<?= e($nodo->dato->identificacion) ?>" href="<?= e(urlNodo($tipo, $nodo->dato->identificacion)) ?>" aria-label="Seleccionar <?= e(nombre($nodo->dato)) ?>, identificación <?= e($nodo->dato->identificacion) ?>, posición <?= $posicion ?>">
@@ -223,11 +228,11 @@ $archivoLista = __DIR__ . '/src/' . ($esDoble ? 'ListaDoble.php' : 'ListaSimple.
                                 <span class="node-data"><span class="node-id">ID <?= e($nodo->dato->identificacion) ?></span><span class="node-name"><?= e(nombre($nodo->dato)) ?></span></span>
                                 <span class="node-links"><?php if ($esDoble): ?><span><small>antes</small><b><?= e(referencia($nodo->antes)) ?></b></span><?php endif; ?><span><small>siguiente</small><b><?= e(referencia($nodo->siguiente)) ?></b></span></span>
                             </a>
-                        <?php endforeach; ?><span class="null-cap" aria-hidden="true">null</span>
+                        <?php endforeach; ?><span class="null-cap" aria-hidden="true"><?= $esCircular ? e(referencia($lista->cabeza)) : 'null' ?></span>
                     </div>
                 <?php endif; ?>
             </div>
-            <div class="canvas-footer"><span><span class="legend-dot"></span> Nodo seleccionado · <?= $esDoble ? 'Conexión en ambos sentidos' : 'Conexión hacia el siguiente' ?></span><div class="inline-forms"><form method="post" data-confirmar="Los datos de esta versión se reemplazarán por tres personas ficticias."><?php ocultos('ejemplo', $tipo, $token); ?><button class="text-button" type="submit">Cargar ejemplo</button></form><form method="post" data-confirmar="Se retirarán los nodos de esta versión. La otra lista se conserva."><?php ocultos('vaciar', $tipo, $token); ?><button class="text-button muted" type="submit" <?= $lista->cantidad === 0 ? 'disabled' : '' ?>>Vaciar lista</button></form></div></div>
+            <p class="form-note"><?php if ($esCircular && $lista->cantidad > 0): ?>Cierre: cola.siguiente = <?= e(referencia($lista->cabeza)) ?> · cabeza.antes = <?= e(referencia($lista->cola)) ?>. El recorrido termina después de una vuelta.<?php endif; ?></p><div class="canvas-footer"><span><span class="legend-dot"></span> Nodo seleccionado · <?= $esDoble ? 'Conexión en ambos sentidos' : 'Conexión hacia el siguiente' ?></span><div class="inline-forms"><form method="post" data-confirmar="Los datos de esta versión se reemplazarán por tres personas ficticias."><?php ocultos('ejemplo', $tipo, $token); ?><button class="text-button" type="submit">Cargar ejemplo</button></form><form method="post" data-confirmar="Se retirarán los nodos de esta versión. Las otras listas se conservan."><?php ocultos('vaciar', $tipo, $token); ?><button class="text-button muted" type="submit" <?= $lista->cantidad === 0 ? 'disabled' : '' ?>>Vaciar lista</button></form></div></div>
         </section>
         <section class="panel selection-panel" aria-labelledby="titulo-seleccion"><div class="panel-heading"><div><span class="eyebrow">NODO SELECCIONADO</span><h2 id="titulo-seleccion"><?= $seleccionado ? e(nombre($seleccionado->dato)) : 'Elige un nodo de la lista' ?></h2></div><div class="action-buttons">
             <?php if ($seleccionado): ?><a class="button secondary small" href="<?= e(urlNodo($tipo, $idSeleccionado, true)) ?>#formulario">Editar</a><form method="post" data-confirmar="<?= e('Se eliminará a ' . nombre($seleccionado->dato) . '. Primero se reconectarán sus vecinos.') ?>"><?php ocultos('eliminar', $tipo, $token); ?><input type="hidden" name="identificacion" value="<?= e($idSeleccionado) ?>"><button type="submit" class="button danger-outline small">Eliminar</button></form><?php else: ?><button class="button secondary small" disabled>Editar</button><button class="button danger-outline small" disabled>Eliminar</button><?php endif; ?>
@@ -255,9 +260,10 @@ $archivoLista = __DIR__ . '/src/' . ($esDoble ? 'ListaDoble.php' : 'ListaSimple.
         <?php foreach ($lista->recorrer() as $posicion => $nodo): ?><tr class="<?= $seleccionado === $nodo ? 'selected' : '' ?>"><td class="mono"><?= $posicion ?></td><td class="mono"><?= e($nodo->dato->identificacion) ?></td><td><?= e(nombre($nodo->dato)) ?></td><td><?= e($nodo->dato->correo) ?></td><?php if ($esDoble): ?><td class="mono"><?= e(referencia($nodo->antes)) ?></td><?php endif; ?><td class="mono"><?= e(referencia($nodo->siguiente)) ?></td><td><a class="text-button" href="<?= e(urlNodo($tipo, $nodo->dato->identificacion)) ?>">Seleccionar</a></td></tr><?php endforeach; ?>
         <?php if ($lista->cantidad === 0): ?><tr><td class="table-empty" colspan="<?= $esDoble ? 7 : 6 ?>">Todavía no hay nodos para recorrer.</td></tr><?php endif; ?>
     </tbody></table></div></section>
-    <section id="logica" class="logic-section"><div><span class="eyebrow">LO QUE CAMBIA ENTRE VERSIONES</span><h2>Nodo, agregar y eliminar.</h2><p>La lista simple tiene un enlace por nodo: <code>siguiente</code>. La doble añade <code>antes</code>, equivalente al <code>anterior</code> que menciona el profesor.</p><p>Buscar, consultar y editar se comparten en <code>ListaBase.php</code>. La inserción por posición conserva el cambio solicitado en el mensaje escrito.</p><p>Primero se conectan los vecinos y después se actualizan cabeza y cola. Al eliminar, los vecinos se reconectan antes de retirar el nodo.</p></div><details class="panel code-details"><summary>Ver el código de esta versión <span aria-hidden="true">+</span></summary><div class="code-grid"><h3><?= $esDoble ? 'ListaDoble.php' : 'ListaSimple.php' ?></h3><pre><?= e(file_get_contents($archivoLista)) ?></pre></div></details></section>
-    <footer class="footer"><span>PHP · HTML · CSS</span><span>Dos listas independientes, guardadas en la sesión de PHP.</span></footer>
+    <section id="logica" class="logic-section"><div><span class="eyebrow">LO QUE CAMBIA ENTRE VERSIONES</span><h2>Nodo, agregar y eliminar.</h2><p>La lista simple tiene un enlace por nodo: <code>siguiente</code>. La doble añade <code>antes</code>, equivalente al <code>anterior</code> que menciona el profesor.</p><p>Consultar y editar se heredan de <code>ListaBase.php</code>. La circular adapta buscar y recorrer para detenerse después de una vuelta. La inserción por posición conserva el cambio solicitado en el mensaje escrito.</p><p>Primero se conectan los vecinos y después se actualizan cabeza y cola. Al eliminar, los vecinos se reconectan antes de retirar el nodo.</p></div><details class="panel code-details"><summary>Ver el código de esta versión <span aria-hidden="true">+</span></summary><div class="code-grid"><h3><?= basename($archivoLista) ?></h3><pre><?= e(file_get_contents($archivoLista)) ?></pre></div></details></section>
+    <footer class="footer"><span>PHP · HTML · CSS</span><span>Tres listas independientes, guardadas en la sesión de PHP.</span></footer>
 </main>
 <dialog id="confirmacion" aria-labelledby="confirmacion-titulo"><form method="dialog"><span class="dialog-symbol" aria-hidden="true">!</span><h2 id="confirmacion-titulo">Confirmar operación</h2><p id="confirmacion-texto"></p><div class="dialog-actions"><button id="confirmacion-cancelar" class="button secondary" value="cancelar">Cancelar</button><button class="button danger" value="aceptar">Confirmar</button></div></form></dialog>
 </body>
 </html>
+

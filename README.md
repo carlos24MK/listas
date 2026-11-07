@@ -1,4 +1,28 @@
-# Listas enlazadas simple y doble en PHP
+# Listas simple, doble y doble circular
+
+## Abrir en GitHub Pages
+
+- [Lista simple](https://carlos24mk.github.io/listas/simple/)
+- [Lista doble](https://carlos24mk.github.io/listas/)
+- [Lista doble circular](https://carlos24mk.github.io/listas/circular/)
+
+Cada página conserva sus datos por separado en el navegador. La circular añade botones Anterior y Siguiente para comprobar el paso de cabeza a cola y de cola a cabeza. Su código está en `circular/lista.js` y su interfaz en `circular/app.js`; reutiliza las clases originales de `lista.js`.
+
+En WAMP abre `index.php?tipo=circular` o usa la tercera pestaña. La clase PHP es `src/ListaDobleCircular.php`. Las sesiones anteriores se conservan y se inicializa la tercera lista por separado.
+
+La guía [docs/Lista_doble_circular.md](docs/Lista_doble_circular.md) explica el cambio paso a paso para sustentarlo ante el profesor.
+
+Pruebas:
+
+```bash
+node --test tests/circular.test.js
+php tests/probar.php
+php tests/probar_circular.php
+```
+
+La sección siguiente describe las dos versiones originales; la tercera añade el cierre circular y modifica buscar/recorrer para no esperar a null.
+
+## Versiones originales en PHP
 
 Programa para estudiar las indicaciones del profesor Jimmy. Conserva dos listas independientes: una simple y otra doble. Incluye inserción en cualquier posición, búsqueda, consulta, edición y eliminación.
 
@@ -151,3 +175,4 @@ Abre la carpeta listas_php_codex en Codex o VS Code. Lee primero Persona.php, No
 Puedes usar esta instrucción:
 
 > Conserva la lista simple y la doble como versiones independientes. Estudia src/ListaBase.php antes de cambiar nada. Buscar, consultar y editar deben seguir siendo compartidos. Cada nodo doble tiene antes y siguiente, inicialmente null. En agregar se conectan los vecinos antes de actualizar cabeza y cola. En eliminar se reconectan los vecinos antes de desconectar el nodo. Mantén la inserción por posición y ejecuta php tests/probar.php después de modificar los algoritmos. Explica cada cambio con palabras sencillas.
+

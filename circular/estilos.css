@@ -1,0 +1,6 @@
+@import url('../estilos.css');
+.selection-panel .panel-heading { flex-wrap: wrap; gap: 16px; }
+.action-buttons { flex-wrap: wrap; }
+.main > nav { margin-bottom: 20px; line-height: 1.8; }
+.main > nav a { color: #0f766e; }
+#cierre-circular { margin: 0; padding: 12px 20px; border-top: 1px solid #e2e8f0; }
